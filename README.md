@@ -1,2 +1,49 @@
-# AI_Agent_Robot
-这是一个可以统计txt文件的以及对话的机器人模型
+# AI 智能对话机器人（Python 实战项目）
+基于讯飞星火大模型 + 本地RAG知识库的多功能AI助手，完整覆盖Python模块化、异常处理、正则、Agent、RAG全流程
+
+## 🎯 项目功能
+| 模块 | 功能 | 完成时间 |
+|------|------|----------|
+| 模块化工具类 | 封装TXT/JSON读写、文本统计、文件处理 | 周一 |
+| 对话机器人 | 多轮记忆、流式输出、异常处理、日志记录 | 周三 |
+| 正则批量处理 | 提取手机号/邮箱/日期、批量清洗TXT | 周四 |
+| AI Agent工具调用 | 自动调用文件统计函数，实现指令执行 | 周五 |
+| 本地RAG知识库 | 基于本地TXT文档检索问答，无需联网 | 周六 |
+| 项目工程化 | 结构整理、README编写、GitHub上线 | 周日 |
+
+## 📁 项目文件说明
+- `file_toolkit.py`：文件处理工具类，封装所有TXT/JSON基础操作
+- `chat_robot_v2.py`：稳定版对话机器人，带logging日志和完整异常处理
+- `tool.py`：TXT文件统计工具，批量统计行数/词数/字符数
+- `extract_info.py`：正则批量提取脚本，提取手机号、邮箱、日期等信息
+- `batch_file_process.py`：批量文件清洗脚本，去空行、去注释、重命名
+- `rag_txt.py`：RAG+星火AI最终版，本地知识库+AI智能问答
+- `txt_files/`：原始测试TXT文件
+- `cleaned_files/`：批量清洗后的文件
+- `robot_log.log`：对话机器人运行日志
+- `extracted_info.json`：正则提取结果文件
+
+## 🚀 运行环境与依赖
+### 环境要求
+- Python 3.8+
+- 虚拟环境（推荐）
+
+### 依赖安装
+`bash
+pip install websocket-client requests
+`
+
+### 运行说明
+- 对话机器人：运行 chat_robot_v2.py，支持多轮对话、日志记录
+- 批量提取：运行 extract_info.py，自动提取txt_files内的信息
+- 批量清洗：运行 batch_file_process.py，自动清洗 TXT 文件
+- RAG 问答：运行 rag_ai_final.py，基于本地 TXT 文档问答
+
+### ✨ 项目亮点
+- 完全模块化设计，代码可复用、易扩展
+- 完整异常处理 + 日志记录，程序稳定不崩溃
+- 纯本地 RAG 知识库，无需联网，数据安全
+- 支持 AI Agent 工具调用，实现指令自动化执行
+- 规范的项目结构，符合企业级开发标准
+### 📝 项目总结
+本项目完整实现了从 Python 基础工具类到 AI Agent、RAG 知识库的全流程开发，覆盖了 Python 编程、大模型应用、信息检索等核心技能。
