@@ -32,3 +32,7 @@ def txt_statistics(directory: str) -> str:
 
     summary = f"✅ 扫描完成！共找到 {txt_count} 个 TXT 文件\n" + "\n".join(results)
     return summary
+
+# 👇 加在这里，让网页能调用
+def file_stat(file_path):
+    return txt_statistics(os.path.dirname(file_path))
