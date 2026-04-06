@@ -74,6 +74,12 @@ def batch_extract(folder_path="txt_files"):
     print("\n✅ 批量提取完成！结果已写入 extracted_info.json")
 
 
+# ==================== 👇👇👇 这里加 2 行，给网页用 ====================
+def extract_all(file_path):
+    res = extract_from_txt(file_path)
+    return json.dumps(res, ensure_ascii=False, indent=2)
+
+
 # ==================== 运行 ====================
 if __name__ == "__main__":
     batch_extract()
