@@ -7,6 +7,7 @@ import websocket
 import ssl
 import logging
 from urllib.parse import urlencode
+from concurrent.futures import ThreadPoolExecutor
 
 # ==================== 配置 ====================
 APPID = "f34ada10"
@@ -36,6 +37,7 @@ class ChatRobot:
         self.system_prompt = "你是一个简洁专业的AI助手。"
         self.max_history = 10
         self.current_reply = ""
+        self.executor = ThreadPoolExecutor(max_workers=1)  # 线程池解决异步冲突
         logging.info("✅ 对话机器人初始化成功")
 
     def set_system_prompt(self, prompt):
@@ -84,12 +86,10 @@ class ChatRobot:
 
             content = data["payload"]["choices"]["text"][0]["content"]
             self.current_reply += content
-            print(content, end="", flush=True)
 
             if data["header"]["status"] == 2:
                 self.history.append({"role": "assistant", "content": self.current_reply})
                 logging.info(f"🤖 AI回复：{self.current_reply[:50]}...")
-                print("\n")
                 ws.close()
 
         except Exception as e:
@@ -107,43 +107,57 @@ class ChatRobot:
         except Exception as e:
             logging.error(f"❌ 发送消息失败：{str(e)}")
 
+    def _run_websocket(self, question):
+        """线程中运行WebSocket，避免阻塞Gradio"""
+        self.current_reply = ""
+        self.history.append({"role": "user", "content": question})
+        logging.info(f"👤 用户提问：{question}")
+
+        if len(self.history) > self.max_history * 2:
+            self.history = self.history[-self.max_history * 2:]
+
+        url = self._generate_auth_url()
+        if not url:
+            logging.error("❌ URL生成失败，无法发送请求")
+            return "请求生成失败，请重试"
+
+        ws = websocket.WebSocketApp(
+            url,
+            on_open=self._on_open,
+            on_message=self._on_message,
+            on_error=lambda ws, err: logging.error(f"❌ WebSocket错误：{err}"),
+            on_close=lambda ws, c, m: logging.info("🔌 连接已关闭")
+        )
+
+        ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+        return self.current_reply
+
     def ask(self, question):
         try:
             if not question or not question.strip():
                 logging.warning("⚠️ 用户输入为空")
-                print("请输入有效问题")
-                return
+                return "请输入有效问题"  # 必须返回字符串，不能返回None
 
-            self.current_reply = ""
-            self.history.append({"role": "user", "content": question})
-            logging.info(f"👤 用户提问：{question}")
-
-            if len(self.history) > self.max_history * 2:
-                self.history = self.history[-self.max_history * 2:]
-
-            url = self._generate_auth_url()
-            if not url:
-                logging.error("❌ URL生成失败，无法发送请求")
-                return
-
-            ws = websocket.WebSocketApp(
-                url,
-                on_open=self._on_open,
-                on_message=self._on_message,
-                on_error=lambda ws, err: logging.error(f"❌ WebSocket错误：{err}"),
-                on_close=lambda ws, c, m: logging.info("🔌 连接已关闭")
-            )
-
-            ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+            # 在线程中运行，避免阻塞Gradio
+            future = self.executor.submit(self._run_websocket, question)
+            result = future.result(timeout=30)  # 30秒超时
+            return result if result else "未获取到有效回复"
 
         except Exception as e:
             logging.error(f"❌ 对话异常：{str(e)}")
-            print("程序出错，但已安全捕获，不会崩溃")
+            return f"程序出错：{str(e)}"
+
+
+# ==================== 全局单例 + 提供给 Gradio 调用的 chat 函数 ====================
+robot = ChatRobot()
+
+def chat(message, history=None):
+    """Gradio 兼容的聊天函数，必须返回字符串"""
+    return robot.ask(message)
 
 
 # ==================== 运行 ====================
 if __name__ == "__main__":
-    robot = ChatRobot()
     print("=== 稳定版对话机器人（带日志）===")
     print("输入 exit 退出\n")
 
@@ -154,4 +168,4 @@ if __name__ == "__main__":
             print("再见！")
             break
         print("AI：", end="")
-        robot.ask(user_input)
+        print(robot.ask(user_input))
